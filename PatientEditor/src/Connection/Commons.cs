@@ -25,7 +25,8 @@ namespace MindLinc.Connection
 
         private static bool propertyMatches(PropertyInfo prop, Patient patient, Patient filter)
         {
-            return prop.GetValue(patient).ToString().ToLower()
+            var patientProp = prop.GetValue(patient);
+            return patientProp != null && patientProp.ToString().ToLower()
                 .Contains(prop.GetValue(filter).ToString().ToLower());
         }
     }

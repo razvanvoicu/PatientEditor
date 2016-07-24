@@ -59,7 +59,7 @@ namespace MindLinc.Model
         public DataGridViewRow ToDataGridViewRow()
         {
             var row = new DataGridViewRow();
-            string dateString = birth_date == null ? null : birth_date.ToString();
+            string dateString = birth_date == null ? null : birth_date.Value.ToString("yyyy-MM-dd");
             row.Cells.AddRange(new DataGridViewCell[]
                 {
                     mkCell(id), mkCell(family_name), mkCell(given_name), mkCell(dateString),
