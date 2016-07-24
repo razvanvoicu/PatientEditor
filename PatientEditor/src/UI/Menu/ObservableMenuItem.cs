@@ -11,6 +11,7 @@ namespace MindLinc.UI.Menu
         static private Logger logger = LogManager.GetCurrentClassLogger();
         ObservableMenuItem[] _submenus;
 
+        // Turn a menu item into an observable event source
         public ObservableMenuItem(string text, Keys shortcut, ObservableMenuItem[] submenus = null)
         {
             Text = text;

@@ -1,5 +1,6 @@
 ﻿namespace MindLinc.UI.Menu
 {
+    // Encode all the menu strings as symbolic constants
     static class MenuText
     {
         public const string FILE = "File";

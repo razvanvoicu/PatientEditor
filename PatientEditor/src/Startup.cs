@@ -5,6 +5,7 @@ using System.Windows.Forms;
 
 namespace MindLinc
 {
+    // Boilerplate startup lifted from WinForms examples on the web
     static class Startup
     {
         static private Logger logger = LogManager.GetCurrentClassLogger();

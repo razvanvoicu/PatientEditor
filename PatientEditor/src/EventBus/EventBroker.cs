@@ -3,6 +3,8 @@ using System.Reactive.Subjects;
 
 namespace MindLinc.EventBus
 {
+    // Message bus simulator. We simply use a 'Subject' to connect publishers with subscribers.
+    // We use Reactive Extension rather than a specialized message bus API, since using Rx was a requirement.
     public class EventBroker<T>: ISubject<T>, IObserver<T>, IObservable<T>
     {
         Subject<T> _innerSubject = new Subject<T>();

@@ -4,6 +4,7 @@ using System.Reactive.Subjects;
 
 namespace MindLinc.UI.ToolBar
 {
+    // Action to delete/deactivate a patient, as a reactive element.
     class DeletePatientAction : IObserver<EventArgs>, IObservable<PatientDeactivate>
     {
         private static DeletePatientAction _singleton = null;

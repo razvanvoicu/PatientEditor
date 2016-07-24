@@ -2,6 +2,8 @@
 
 namespace MindLinc.EventBus
 {
+    // The event brokers are like topics on a message bus. They are global, anybody can publish or subscribe.
+    // They are not aware of who publishes or subscribes, they only connect the two types of objects.
     public static class GlobalEventBrokers
     {
         public static EventBroker<Patient> FhirPatientBroker = new EventBroker<Patient>();

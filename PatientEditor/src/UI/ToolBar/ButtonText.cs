@@ -1,5 +1,6 @@
 ﻿namespace MindLinc.UI.ToolBar
 {
+    // Symbolic constants used in building the buttons.
     class ButtonText
     {
         public const string DEACTIVATE = "Deactivate";

@@ -16,9 +16,19 @@ namespace MindLinc.Connection
         IObserver<FinderUpdated>, IObserver<CheckUnique>, IObservable<IsUnique>, IObserver<CreatePatient>
     {
 		static private Logger logger = LogManager.GetCurrentClassLogger();
+
+        // TODO: Explore how to make this class testable without making its fields public
+
+        // Model context for EntityFramework, used to persist/retrieve/search data in the local SQL server instance.
         public PatientDbContext Db;
+
+        // Cache to speed up searches
         public IDictionary<string,Patient> cache = new Dictionary<string,Patient>();
+
+        // Current filter, will be updated by FinderUpdated events (generated when user tweaks the FinderForm fields)
         private Patient filter = new Patient();
+
+        // Filter out FinderUpdated events not destined for SqlConnection
         private IObservable<FinderUpdated> _finderUpdated = 
             GlobalEventBrokers.FinderUpdatedBroker.Where(f => f.ContainerTitle == "Filter DB Records");
 
@@ -43,6 +53,7 @@ namespace MindLinc.Connection
             }
         }
 
+        // Setup Message bus subscriptions and registrations
         private void setupSubscriptions()
         {
             GlobalEventBrokers.SqlPatientBroker.RegisterAsPublisher(this);
@@ -54,6 +65,7 @@ namespace MindLinc.Connection
             _finderUpdated.Subscribe(this);
         }
 
+        // Retrieve data from DB, and send to the grid the patients that pass the current filter
         public void SqlFetchData()
         {
             try
@@ -72,6 +84,8 @@ namespace MindLinc.Connection
             }
         }
 
+        // When a patient is edited in the grid, the PatientChange event is emitted, with an encoding of the edit. The edit
+        // operation is propagated into the cache and database.
         public void OnNext(PatientChange patientChange)
         {
             try
@@ -95,6 +109,8 @@ namespace MindLinc.Connection
             }
         }
 
+        // Modify the patient field specified by the PatientChange event. Use reflection
+        // to decouple the modification logic from the actual structure of class Patient.
         public void modifyPatientField(PatientChange patientChange, Patient patient)
         {
             Type patientType = typeof(Patient);
@@ -108,6 +124,9 @@ namespace MindLinc.Connection
                 prop.SetValue(patient, patientChange.NewValue);
         }
 
+        // When the user types in the filtering form, the FinderUpdated event is emitted on each keystroke
+        // Here we react to these events by updating the current filter, and requesting a rebuild of the grid
+        // by sending 'TableClear' and 'Patient' events.
         public void OnNext(FinderUpdated value)
         {
             filter = value.Patient;
@@ -117,6 +136,8 @@ namespace MindLinc.Connection
                     _innerPatientSubject.OnNext(cache[id]);
         }
 
+        // When a new patient is added, a check for unique id is requested via a CheckUnique request.
+        // Here we check the uniqueness, and respond with a IsUnique event containing the answer.
         public void OnNext(CheckUnique request)
         {
             var response = new IsUnique();
@@ -126,6 +147,8 @@ namespace MindLinc.Connection
             _innerIsUniqueSubject.OnNext(response);
         }
 
+        // When the New Patient form has its 'Submit' button clicked, a 'CreatePatient' event is emitted (after id uniqueness has been checked)
+        // Here we react to this event by creating the user, and adding it to the cache and database.
         public void OnNext(CreatePatient createRequest)
         {
             Db.patients.Add(createRequest.Patient);
@@ -148,6 +171,7 @@ namespace MindLinc.Connection
             }
         }
 
+        // Message bus boilerplate
         public void OnError(Exception error) { }
         public void OnCompleted() { }
 

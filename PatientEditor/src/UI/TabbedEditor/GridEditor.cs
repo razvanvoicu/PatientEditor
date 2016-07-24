@@ -10,6 +10,8 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.TabbedEditor
 {
+    // Base class for DbEditor and FhirEditor; populates the columns, and handles 'Patient' events
+    // for which the two editors have exactly the same reaction (adding the patient to the grid).
     class GridEditor: DataGridView, IObserver<Patient>, IObservable<string>
     {
         static private Logger logger = LogManager.GetCurrentClassLogger();
@@ -54,6 +56,7 @@ namespace MindLinc.UI.TabbedEditor
             });
         }
 
+        // React to a Patient event (sent by either SqlConnection, or FhirConnection) by adding the patient to the grid.
         public void OnNext(Patient patient)
         {
             if (InvokeRequired)
@@ -67,6 +70,7 @@ namespace MindLinc.UI.TabbedEditor
                 Rows.Add(patient.ToDataGridViewRow());
         }
 
+        // Event bus boilerplate
         protected ISubject<string> _innerStatusSubject = new Subject<string>();
         public IDisposable Subscribe(IObserver<string> observer)
         {

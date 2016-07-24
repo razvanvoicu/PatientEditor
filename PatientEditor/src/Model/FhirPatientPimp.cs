@@ -6,6 +6,10 @@ using FhirModel = Hl7.Fhir.Model;
 
 namespace MindLinc.Model
 {
+    // Utility extensions to make conversion from Fhir.Model.Patient representation (which is parsed from JSON) more palatable.
+    // It so happens that the information we need is burried inside a very hairy structure, with many fields possibly missing,
+    // so we need to exercise fault tolerance.
+    // Using extension methods makes the Fhir Patient appear to have the needed fields readily available, and allows us to hide ugly code to some extent
     public static class FhirPatientPimp
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();

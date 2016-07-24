@@ -7,10 +7,12 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.Menu
 {
+    // The Menu bar at the top of our app
     class MenuBar: MenuStrip
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        // Menu structure expressed as a tree
         static private ObservableMenuItem[] _menuStructure = new ObservableMenuItem[]
         {
             new ObservableMenuItem(MenuText.FILE, Keys.None, new ObservableMenuItem[]
@@ -36,6 +38,7 @@ namespace MindLinc.UI.Menu
             setupMenuActions();
         }
 
+        // Create the necessary subscriptions to menu actions
         private void setupMenuActions()
         {
             getObservableByText(MenuText.NEW_PATIENT).Subscribe(NewPatientAction.MakeNewPatientAction());
@@ -44,6 +47,7 @@ namespace MindLinc.UI.Menu
             getObservableByText(MenuText.EXIT).Subscribe(new ExitObserver());
         }
 
+        // Convenient way of accessing the menus inside the structure
         public ObservableMenuItem getObservableByText(string text)
         {
             var menuItems = _menuStructure.SelectMany<ObservableMenuItem, ObservableMenuItem>(i => i.getObservablesByText(text)).Where(o => o.Text == text).ToList();
@@ -53,6 +57,7 @@ namespace MindLinc.UI.Menu
         }
     }
 
+    // The simplest menu action: Exit
     class ExitObserver : IObserver<EventArgs>
     {
         public void OnNext(EventArgs value)

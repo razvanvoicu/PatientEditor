@@ -2,6 +2,8 @@ using System.Data.Entity;
 
 namespace MindLinc.Model
 {
+    // Entity framework boilerplate
+    // TODO: figure out how to pass in the connection string programmatically, so that the db system we connect to can be changed on the fly.
     public class PatientDbContext : DbContext
     {
         public PatientDbContext()

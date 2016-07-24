@@ -6,6 +6,7 @@ using FhirModel = Hl7.Fhir.Model;
 
 namespace MindLinc.Model
 {
+    // The model object at the center of our app.
     public class Patient
     {
         public Patient(): base() { }
@@ -56,6 +57,7 @@ namespace MindLinc.Model
 
         public bool active { get; set; } = true;
 
+        // TODO: This is a mix of concerns, and would probably be better implemented as an extension method in the DbGridEditor.
         public DataGridViewRow ToDataGridViewRow()
         {
             var row = new DataGridViewRow();

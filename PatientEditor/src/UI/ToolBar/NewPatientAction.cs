@@ -10,11 +10,18 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.ToolBar
 {
+    // Action invoked by the 'New Patient' button. Builds a form that takes input from the user, and then requests creation of a new patient (after checking for uniqueness of id).
+    // The flow is a bit convoluted here. This object contains a FinderForm (coincidentally, creation and filtering need forms with the same format), but does not have direct 
+    // access to the form's content. It can only find that content by subscribing to the FinderUpdate events issued by the form. These events need to be filtered by destination,
+    // which results in the 'formFills' observable below. We only want FormFills where the 'Submit' button has been pressed. When that happens, the Action issues a request for
+    // uniqueness check to SqlConnection. Upon receiving positive response, it can then issue CreatePatient. This back and forth is necessary because SqlConnection has no UI concernes,
+    // and should not have the responsibility, in the case of a non-unique id, of creating a MessageBox to notify the user.
     class NewPatientAction : IObserver<EventArgs>, IObserver<FinderUpdated>, IObservable<CheckUnique>, IObserver<IsUnique>,
         IObservable<CreatePatient>
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        // Filter FormUpdate stream of events for events only destined for this form.
         IObservable<FinderUpdated> formFills = GlobalEventBrokers.FinderUpdatedBroker.Where(f => f.ContainerTitle == "Add New Patient");
 
         private static NewPatientAction _singletonInstance = null;
@@ -24,6 +31,10 @@ namespace MindLinc.UI.ToolBar
             return _singletonInstance;
         }
 
+        // Receives FormUpdated events from its inner FinderForm
+        // Issues CheckUnique events to SqlConnection
+        // Receives IsUnique events from SqlConnection
+        // Issues CreatePatient events to SqlConnection
         private NewPatientAction()
         {
             formFills.Subscribe(this);
@@ -34,6 +45,7 @@ namespace MindLinc.UI.ToolBar
 
         private Form _form;
 
+        // Show 'New Patient' dialog
         public void OnNext(EventArgs value)
         {
             _form = new Form();
@@ -46,11 +58,9 @@ namespace MindLinc.UI.ToolBar
             _form.ShowDialog();
         }
 
-        public void OnCompleted() { }
+        private FinderUpdated submittedForm; // cache the form, so we can build the CreatePatient later
 
-        public void OnError(Exception error) { }
-
-        private FinderUpdated submittedForm;
+        // Wait for a form with 'Submit' turned on, and then send a uniqueness check request
         public void OnNext(FinderUpdated form)
         {
             if (!form.Submit) return;
@@ -60,12 +70,7 @@ namespace MindLinc.UI.ToolBar
             _innerCheckUniqueSubject.OnNext(checkUniqueRequest);
         }
 
-        private ISubject<CheckUnique> _innerCheckUniqueSubject = new Subject<CheckUnique>();
-        public IDisposable Subscribe(IObserver<CheckUnique> observer)
-        {
-            return _innerCheckUniqueSubject.Subscribe(observer);
-        }
-
+        // Upon receiving the uniqueness response, either send the CreatePatient event, or notify the user of the negative result.
         public void OnNext(IsUnique response)
         {
             if (response.Unique)
@@ -75,6 +80,7 @@ namespace MindLinc.UI.ToolBar
                     "Error while creating new patient", MessageBoxButtons.OK);
         }
 
+        // Build a CreatePatient event and send it to SqlConnection
         private void sendCreatePatientEvent()
         {
             var createPatient = new CreatePatient();
@@ -83,10 +89,21 @@ namespace MindLinc.UI.ToolBar
             try { _form.Close(); } catch { }
         }
 
+        // Event bus boilerplate
         private ISubject<CreatePatient> _innerCreatePatientSubject = new Subject<CreatePatient>();
         public IDisposable Subscribe(IObserver<CreatePatient> observer)
         {
             return _innerCreatePatientSubject.Subscribe(observer);
         }
+
+        private ISubject<CheckUnique> _innerCheckUniqueSubject = new Subject<CheckUnique>();
+        public IDisposable Subscribe(IObserver<CheckUnique> observer)
+        {
+            return _innerCheckUniqueSubject.Subscribe(observer);
+        }
+
+        public void OnCompleted() { }
+
+        public void OnError(Exception error) { }
     }
 }

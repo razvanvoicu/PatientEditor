@@ -3,6 +3,7 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.TabbedEditor
 {
+    // Container for the two editor. Mostly styling concerns here.
     class EditorContainer: TabControl
     {
         static private Logger logger = LogManager.GetCurrentClassLogger();

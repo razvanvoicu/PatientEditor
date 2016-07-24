@@ -9,6 +9,7 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI
 {
+    // Lay out the main components of the app. Start loading data in the background.
     public class MainWindow : Form
     {
         private MenuBar _menuBar = new MenuBar();
@@ -22,10 +23,10 @@ namespace MindLinc.UI
             Text = "Patient Editor";
             _statusStrip.Dock = DockStyle.Bottom;
             setLayout();
-            var bw = new BackgroundWorker();
+            var bw = new BackgroundWorker(); // Load FHIR REST data in the background
             bw.DoWork += (e, a) => new FhirConnection(startFetchingData: true);
             bw.RunWorkerAsync();
-            var bw1 = new BackgroundWorker();
+            var bw1 = new BackgroundWorker(); // Load database records in the background
             bw1.DoWork += (e, a) => new SqlConnection();
             bw1.RunWorkerAsync();
         }

@@ -11,11 +11,15 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.TabbedEditor
 {
+    // This is used to collect the filtering informtion from the user. Somewhat peculiarly, we managed to reuse this
+    // to create the 'New Patient' form.
+    // TODO: perhaps the responsibilities of filtering and patient creation should be segregated.
     class FinderForm : TableLayoutPanel, IObservable<FinderUpdated>, IObserver<Tuple<string, string, string>>,
         IObserver<EventArgs>
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        // Styling settings. TODO: move to a separate class, or a config file.
         private const int ROW_HEIGHT = 20;
         private const int TITLE_WIDTH = 280;
         private const string TITLE_FONT_FAMILY = "arial";
@@ -23,6 +27,7 @@ namespace MindLinc.UI.TabbedEditor
         private const int LABEL_TOP_PADDING = 6;
         private const int TEXTBOX_WIDTH = 180;
 
+        // We handle the text boxes in bulk, using reflection on the patient.
         private ISet<ObservableTextBox> _textBoxes = new HashSet<ObservableTextBox>();
 
         public string Title { get; set; }
@@ -119,14 +124,10 @@ namespace MindLinc.UI.TabbedEditor
             return searchResult.Count() == 0 ? null : searchResult.First();
         }
 
-        private FinderUpdated _finderState = new FinderUpdated();
-        private ISubject<FinderUpdated> _innerFinderUpdatedSubject = new Subject<FinderUpdated>();
-
-        public IDisposable Subscribe(IObserver<FinderUpdated> observer)
-        {
-            return _innerFinderUpdatedSubject.Subscribe(observer);
-        }
-
+        private FinderUpdated _finderState = new FinderUpdated(); // The current filter representation of this form.
+                                                                  // Each keystroke updates this state by one character,
+                                                                  // but then we send the entire object as an event, making it easy
+                                                                  // for the grid to appear reactive.
         public void OnNext(Tuple<string, string, string> value)
         {
             _finderState.ContainerTitle = Title;
@@ -164,6 +165,13 @@ namespace MindLinc.UI.TabbedEditor
             _innerFinderUpdatedSubject.OnNext(_finderState);
             _finderState.Submit = false;
             try { (Parent as Form).Close(); } catch { }
+        }
+
+        // Event bus boilerplate
+        private ISubject<FinderUpdated> _innerFinderUpdatedSubject = new Subject<FinderUpdated>();
+        public IDisposable Subscribe(IObserver<FinderUpdated> observer)
+        {
+            return _innerFinderUpdatedSubject.Subscribe(observer);
         }
 
         public void OnError(Exception error) { }

@@ -2,6 +2,7 @@
 
 namespace MindLinc.EventBus
 {
+    // This event is issued by a cell content change in the DB data grid. It is consumed by SqlConnection.
     public class PatientChange
     {
         public string Id { get; set; }

@@ -3,6 +3,9 @@ using System;
 
 namespace MindLinc.EventBus
 {
+    // This event is issued by 'FinderForm' whenever the finder fields are changed by user input (one event per keystroke)
+    // This event is consumed by FhirConnection, SqlConnection, and New Patient form. Each of these consumers
+    // will filter by 'ContainerTitle' to select the events destined for them.
     public class FinderUpdated
     {
         public string ContainerTitle { get; set; }

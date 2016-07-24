@@ -6,6 +6,7 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.TabbedEditor
 {
+    // The DB patient editor. Allows filtering and modifying patients. If a modification is invalid, the original value is restored.
     class DbGridEditor : GridEditor, IObservable<PatientChange>, IObserver<DbTableClear>, IObserver<PatientDeactivate>
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -15,6 +16,11 @@ namespace MindLinc.UI.TabbedEditor
             setupObservables();
         }
 
+        // Issues PatientChange when the field of a patient has been edited; consumed by SqlConnection
+        // Responds to 'Patient' messages, by displaying the patient; issued by SqlConnection
+        // Responds to TableClear event, by clearing all rows in the table; issued by SqlConnection (when its filter was updated)
+        // Responds to PatientDeactivate, by turning the active flag to false (this change will automatically trigger PatientChange by the underlying DataGridView).
+        // -- PatientDeactivate is issued by the 'Deactivate' button.
         private void setupSubscriptions()
         {
             GlobalEventBrokers.SqlPatientBroker.Subscribe(this);
@@ -23,12 +29,14 @@ namespace MindLinc.UI.TabbedEditor
             GlobalEventBrokers.PatientChangeBroker.RegisterAsPublisher(this);
         }
 
+        // Turn UI events into Reactive Observables
         private void setupObservables()
         {
             setupCellValueChangedObservable();
             setupCurrentCellChangedObservable();
         }
 
+        // When the user edits a cell, WinForms issues the CellValueChanged event. We turn this event into an observable
         private void setupCellValueChangedObservable()
         {
             CellValueChanged += new DataGridViewCellEventHandler((object s, DataGridViewCellEventArgs e) =>
@@ -44,6 +52,7 @@ namespace MindLinc.UI.TabbedEditor
             });
         }
 
+        // Date formatting requires special attention
         private bool fieldContainsDate(string columnName, string dateString)
         {
             DateTime _dummyDate = DateTime.Now;
@@ -61,6 +70,10 @@ namespace MindLinc.UI.TabbedEditor
             _innerPatientChangeSubject.OnNext(new PatientChange(id, columnName, newCellValue));
         }
 
+        // Restoring the original value (in case a change was invalid) requires extra attention, since the underlying
+        // WinForms layer does not cache the previous value of a cell, and the CellValueChanged event is issued only
+        // after the content of the cell has already been modified. To alleviate that, we snatch the content of the
+        // currently focussed cell when the focus moves. When the content changes, the old content is the snatched content.
         private void setupCurrentCellChangedObservable()
         {
             CurrentCellChanged += new EventHandler((object s, EventArgs e) =>
@@ -70,6 +83,8 @@ namespace MindLinc.UI.TabbedEditor
             });
         }
 
+        // Snatch the content only when there is a proper focus. That is indicated by the coordinates
+        // of the current position being non-negative.
         private bool currentCellHasProperValue()
         {
             return CurrentCellAddress.Y >= 0
@@ -79,6 +94,7 @@ namespace MindLinc.UI.TabbedEditor
 
         private object _focusedCellValue = null;
 
+        // Respond to the PatientDeactivate event, issued by the 'Deactivate' button.
         public void OnNext(PatientDeactivate value)
         {
             var row = CurrentCellAddress.Y;
@@ -98,11 +114,14 @@ namespace MindLinc.UI.TabbedEditor
             }
         }
 
+        // Handle boolean cell formatting. This is necessary since the content of the cell has type 'object', and a
+        // value type is wrapped into a nullable type to be storable in a cell.
         private bool cellValueAsBoolean(DataGridViewCell cell)
         {
             return cell.Value.ToString() == "True";
         }
 
+        // Perform the deactivation by first asking permission from the user
         private void deactivatePatient(DataGridViewCell cell, object id)
         {
             var dialogResult = MessageBox.Show(this, 
@@ -114,11 +133,13 @@ namespace MindLinc.UI.TabbedEditor
             _innerStatusSubject.OnNext(statusMessage);
         }
 
+        // Respond to TableClear request by wiping all the data in the grid.
         public void OnNext(DbTableClear value)
         {
             Rows.Clear();
         }
 
+        // Event bus boilerplate
         private ISubject<PatientChange> _innerPatientChangeSubject = new Subject<PatientChange>();
         public IDisposable Subscribe(IObserver<PatientChange> observer)
         {

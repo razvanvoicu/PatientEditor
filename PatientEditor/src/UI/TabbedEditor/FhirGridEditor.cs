@@ -7,10 +7,15 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.TabbedEditor
 {
+    // Display data fetched from FHIR, after filtering it.
     class FhirGridEditor: GridEditor, IObserver<FhirTableClear>, IObserver<ImportFhirRequest>, IObservable<CreatePatient>
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        // Receives 'Patient' events from FhirConnection; displays the patients if they pass the filter.
+        // Receives 'TableClear' event from FhirConnection; clears the table in anticipation of new result sent being sent by FhirConnection.
+        // Receives 'ImportRequest' event from 'Import FHIR' button.
+        // Issues CreatePatient event to SqlConnection, which will finalize the import.
         public FhirGridEditor(): base(readOnly: true)
         {
             GlobalEventBrokers.FhirPatientBroker.Subscribe(this);
@@ -19,9 +24,10 @@ namespace MindLinc.UI.TabbedEditor
             GlobalEventBrokers.CreatePatientBroker.RegisterAsPublisher(this);
         }
 
+        // Upon receiving ImportFhirRequest, extract the patient information from the selected row, and send a 'CreatePatient' event to SqlConnection
         public void OnNext(ImportFhirRequest value)
         {
-            if (CurrentCellAddress.Y < 0) { warnRowSelectionNeeded(); return; }
+            if (CurrentCellAddress.Y < 0) { warnRowSelectionNeeded(); return; } // if there is no row collection, warn the user, and abort the import
             var cells = Rows[CurrentCellAddress.Y].Cells;
             var patient = new Patient();
             patient.id = cells[0].Value.ToString();
@@ -45,6 +51,7 @@ namespace MindLinc.UI.TabbedEditor
             _innerStatusSubject.OnNext(statusMessage);
         }
 
+        // If there is no row selection, warn the user
         private void warnRowSelectionNeeded()
         {
             MessageBox.Show(
@@ -52,11 +59,14 @@ namespace MindLinc.UI.TabbedEditor
                 "Error while importing patient", MessageBoxButtons.OK);
         }
 
+        // Respond to a TableClear event by wiping out the data in the grid
         public void OnNext(FhirTableClear tableClearRequest)
         {
             Rows.Clear();
         }
 
+
+        // Event bus boilerplate
         ISubject<CreatePatient> _innerCreatePatientSubject = new Subject<CreatePatient>();
         public IDisposable Subscribe(IObserver<CreatePatient> observer)
         {

@@ -6,6 +6,7 @@ using System.Windows.Forms;
 
 namespace MindLinc.UI.ToolBar
 {
+    // Buttons converted into Reactive Observables
     class ObservableButton : ToolStripButton, IObservable<EventArgs>
     {
         static private Logger logger = LogManager.GetCurrentClassLogger();

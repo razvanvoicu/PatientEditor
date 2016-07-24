@@ -8,6 +8,8 @@ using System.Windows.Forms;
 namespace MindLinc.UI.ToolBar
 {
     using static ButtonText;
+
+    // ToolBar buttons, and their connection to corresponding actions.
     class Buttons: ToolStrip
     {
         static private Logger logger = LogManager.GetCurrentClassLogger();

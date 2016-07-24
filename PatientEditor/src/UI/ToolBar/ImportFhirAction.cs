@@ -5,6 +5,7 @@ using System.Reactive.Subjects;
 
 namespace MindLinc.UI.ToolBar
 {
+    // Action invoked by the 'Import Fhir' button, as a reactive element
     class ImportFhirAction : IObserver<EventArgs>, IObservable<ImportFhirRequest>
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
